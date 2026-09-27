@@ -18,7 +18,9 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -29,6 +31,11 @@ button {
   min-height: 38px;
   padding: 0 12px;
   cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .app-shell {
@@ -94,6 +101,10 @@ h1 {
   display: grid;
   align-content: center;
   gap: 10px;
+}
+
+.stack-card button {
+  margin-top: 6px;
 }
 
 .stack-card span,
@@ -214,13 +225,26 @@ label {
   gap: 8px;
 }
 
-input {
+input,
+select {
   width: 100%;
   min-height: 42px;
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0 12px;
   color: #172033;
+  background: #ffffff;
+}
+
+textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  color: #172033;
+  background: #ffffff;
+  line-height: 1.7;
+  resize: vertical;
 }
 
 .record-list {
@@ -260,6 +284,435 @@ input {
   line-height: 1.6;
 }
 
+/* ---------- 跨设备续接台 ---------- */
+
+.badge {
+  display: inline-block;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.badge-ok {
+  color: #0f766e;
+  background: color-mix(in srgb, var(--accent) 14%, #ffffff);
+}
+
+.badge-warn {
+  color: #b45309;
+  background: color-mix(in srgb, var(--warn) 18%, #ffffff);
+}
+
+.badge-risk {
+  color: #be123c;
+  background: color-mix(in srgb, #e11d48 12%, #ffffff);
+}
+
+.badge-muted {
+  color: #64748b;
+  background: #eef2f7;
+}
+
+.session-list {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.session-item {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fbfdff;
+  height: auto;
+}
+
+.session-item.selected {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 7%, #ffffff);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.session-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-item-head .badge {
+  margin-left: 0;
+}
+
+.session-item-sub {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.session-item .badge-risk {
+  margin-left: 0;
+  justify-self: start;
+}
+
+.subheading {
+  margin: 22px 0 10px;
+  font-size: 15px;
+  color: #334155;
+}
+
+/* 时间线 */
+.timeline {
+  margin-bottom: 10px;
+}
+
+.timeline-track {
+  position: relative;
+  height: 26px;
+  border-radius: 999px;
+  background: #eef2f7;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.timeline-confirmed {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: color-mix(in srgb, var(--accent) 55%, #ffffff);
+  z-index: 1;
+}
+
+.timeline-seg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.9);
+  z-index: 2;
+}
+
+.timeline-seg.risk {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent 0 6px,
+    color-mix(in srgb, #e11d48 30%, transparent) 6px 12px
+  );
+}
+
+.timeline-cursor {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 3px;
+  background: var(--primary);
+  border-radius: 2px;
+  z-index: 3;
+}
+
+.timeline-labels {
+  position: relative;
+  height: 44px;
+  margin-top: 6px;
+}
+
+.timeline-labels > div {
+  position: absolute;
+  top: 0;
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.35;
+  overflow: hidden;
+  padding-left: 4px;
+  border-left: 1px dashed var(--border);
+}
+
+.timeline-labels > div.risk {
+  color: #be123c;
+  font-weight: 600;
+}
+
+.timeline-labels small {
+  display: block;
+  color: #94a3b8;
+}
+
+.timeline-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.timeline-legend i {
+  display: inline-block;
+  width: 12px;
+  height: 8px;
+  border-radius: 3px;
+  margin-right: 5px;
+}
+
+.legend-confirmed {
+  background: color-mix(in srgb, var(--accent) 55%, #ffffff);
+}
+
+.legend-cursor {
+  background: var(--primary);
+}
+
+.legend-risk {
+  background: color-mix(in srgb, #e11d48 45%, #ffffff);
+}
+
+.cursor-readout {
+  color: #526070;
+  font-size: 14px;
+  margin: 4px 0 14px;
+}
+
+/* 风险挂起 */
+.risk-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid color-mix(in srgb, #e11d48 40%, #ffffff);
+  background: color-mix(in srgb, #e11d48 7%, #ffffff);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.risk-banner strong {
+  color: #be123c;
+}
+
+.risk-banner p {
+  margin: 6px 0 0;
+  color: #526070;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.risk-resolve {
+  flex-shrink: 0;
+  background: #e11d48;
+  border-color: #e11d48;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* 进度控制 */
+.controls {
+  margin-bottom: 6px;
+}
+
+.controls-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.controls-hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #b45309;
+}
+
+.controls-hint.ok {
+  color: var(--accent);
+}
+
+/* 设备 */
+.device-list {
+  display: grid;
+  gap: 10px;
+}
+
+.device-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 14px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fbfdff;
+}
+
+.device-connected {
+  border-left-color: var(--accent);
+}
+
+.device-disconnected {
+  border-left-color: var(--warn);
+}
+
+.device-stopped {
+  border-left-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.device-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.device-main .badge {
+  margin-left: 0;
+}
+
+.chip {
+  font-size: 12px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 9%, #ffffff);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+.device-meta {
+  grid-column: 1 / -1;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.device-card > button {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.danger-action {
+  color: #be123c;
+  border-color: color-mix(in srgb, #e11d48 45%, #ffffff);
+  background: color-mix(in srgb, #e11d48 6%, #ffffff);
+}
+
+.join-form {
+  display: grid;
+  grid-template-columns: 1fr 140px auto;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.join-form input {
+  min-width: 0;
+}
+
+.summary-actions {
+  grid-template-columns: 1fr auto;
+  margin-bottom: 4px;
+}
+
+/* 连接动态 */
+.event-log {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: 6px 12px;
+}
+
+.event-row {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 13px;
+  color: #334155;
+  border-bottom: 1px dashed var(--border);
+}
+
+.event-row:last-child {
+  border-bottom: none;
+}
+
+.event-time {
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
+
+.event-row.kind-risk {
+  color: #be123c;
+}
+
+.event-row.kind-device {
+  color: #0f766e;
+}
+
+.event-row.kind-summary {
+  color: var(--primary);
+}
+
+/* 纪要 */
+.summary-editor {
+  font-family: "SFMono-Regular", Consolas, "PingFang SC", monospace;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.empty-hint {
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 0;
+}
+
+.version-list {
+  display: grid;
+  gap: 10px;
+}
+
+.version-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.version-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  background: #fbfdff;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.version-head span {
+  color: #334155;
+}
+
+.version-head em {
+  font-style: normal;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.version-content {
+  margin: 0;
+  padding: 14px;
+  border-top: 1px dashed var(--border);
+  background: #ffffff;
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #334155;
+}
+
 @media (max-width: 860px) {
   .hero,
   .workspace,
@@ -269,5 +722,23 @@ input {
 
   .field-grid {
     grid-template-columns: 1fr;
+  }
+
+  .join-form {
+    grid-template-columns: 1fr;
+  }
+
+  .risk-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .device-card {
+    grid-template-columns: 1fr;
+  }
+
+  .device-card > button {
+    grid-row: auto;
+    grid-column: 1;
   }
 }
