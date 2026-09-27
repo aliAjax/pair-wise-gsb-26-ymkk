@@ -1,158 +1,112 @@
+import { useEffect, useMemo, useState } from "react";
 import "./styles.css";
+import { DeviceDock } from "./components/DeviceDock";
+import { MinutesPanel } from "./components/MinutesPanel";
+import { ProgressConsole } from "./components/ProgressConsole";
+import { SessionList } from "./components/SessionList";
+import { createSession, myDevice, tickSession } from "./model";
+import { getTabId, useSessions } from "./store";
 
-const project = {
-  "id": "hxwl-12",
-  "port": 5112,
-  "title": "心理咨询个案记录",
-  "subtitle": "会谈时间线、风险等级与干预目标记录",
-  "stack": "React + Vite + TypeScript + CSS",
-  "theme": [
-    "#7c3aed",
-    "#0f766e",
-    "#f59e0b"
-  ],
-  "domain": "心理咨询",
-  "users": [
-    "咨询师",
-    "督导",
-    "机构管理员"
-  ],
-  "metrics": [
-    "活跃个案",
-    "高风险关注",
-    "本周会谈",
-    "目标推进"
-  ],
-  "filters": [
-    "焦虑",
-    "亲密关系",
-    "亲子",
-    "职业压力"
-  ],
-  "fields": [
-    "来访者代号",
-    "咨询主题",
-    "会谈日期",
-    "主要困扰",
-    "情绪状态",
-    "干预方法",
-    "下次目标"
-  ],
-  "records": [
-    [
-      "C-042",
-      "焦虑",
-      "中风险",
-      "睡眠改善，练习呼吸放松"
-    ],
-    [
-      "C-119",
-      "亲密关系",
-      "稳定",
-      "识别沟通中的回避模式"
-    ],
-    [
-      "C-203",
-      "职业压力",
-      "关注",
-      "设定下周边界练习"
-    ]
-  ]
-};
-
-const statusColors = ["status-ok", "status-watch", "status-danger"];
-
-function MetricCard({ label, value, index }: { label: string; value: string; index: number }) {
-  return (
-    <article className="metric-card">
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <i className={statusColors[index % statusColors.length]} />
-    </article>
-  );
-}
+const TICK_MS = 1000;
 
 function App() {
-  const values = project.metrics.map((metric: string, index: number) => {
-    const base = [84, 12, 31, 7][index % 4];
-    return String(base + index * 3);
-  });
+  const tabId = useMemo(getTabId, []);
+  const { sessions, mutate, addSession, resetDemo } = useSessions();
+  const [selectedId, setSelectedId] = useState<string | undefined>(
+    () => sessions[0]?.id
+  );
+
+  const session = sessions.find((s) => s.id === selectedId) ?? sessions[0];
+  const me = session ? myDevice(session, tabId) : undefined;
+
+  // 新建会谈事件（来自侧栏表单）：本标签页以咨询师端发起
+  useEffect(() => {
+    const onCreate = (e: Event) => {
+      const detail = (e as CustomEvent).detail as {
+        clientCode: string;
+        topic: string;
+        plannedMinutes: number;
+        kind: string;
+      };
+      const s = createSession({
+        clientCode: detail.clientCode,
+        topic: detail.topic,
+        plannedMinutes: detail.plannedMinutes,
+        kind: detail.kind,
+        role: "counselor",
+        tabId,
+      });
+      addSession(s);
+      setSelectedId(s.id);
+    };
+    window.addEventListener("hxwl:create-session", onCreate);
+    return () => window.removeEventListener("hxwl:create-session", onCreate);
+  }, [addSession, tabId]);
+
+  // 会谈计时心跳：按真实流逝时间推进（多标签页不倍速）；冻结/离线/结束由 tickSession 内部判断
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      for (const s of sessions) {
+        if (s.status !== "ongoing") continue;
+        mutate(s.id, (cur) => tickSession(cur));
+      }
+    }, TICK_MS);
+    return () => window.clearInterval(timer);
+  }, [sessions, mutate]);
+
+  if (!session) {
+    return (
+      <main className="app-shell">
+        <p>暂无会谈。</p>
+      </main>
+    );
+  }
+
+  const consoleProps = { session, tabId, me, mutate };
 
   return (
     <main className="app-shell">
-      <section className="hero">
+      <header className="hero">
         <div>
-          <p className="eyebrow">{project.id} · port {project.port}</p>
-          <h1>{project.title}</h1>
-          <p className="subtitle">{project.subtitle}</p>
+          <p className="eyebrow">hxwl-12 · port 5112</p>
+          <h1>心理咨询个案 · 跨设备续接台</h1>
+          <p className="subtitle">
+            每场会谈记录设备、确认到的分钟与连接状态；新设备接入先停旧端并接走最后确认位置。
+            风险话题掉线时冻结进度，情绪稳定确认后方可继续；结束按确认点出纪要，修订另存原因版本。
+          </p>
         </div>
         <div className="stack-card">
-          <span>技术栈</span>
-          <strong>{project.stack}</strong>
+          <span>本标签页设备身份</span>
+          <strong>{me ? me.label : "尚未接入任何设备"}</strong>
+          <span>
+            {me
+              ? me.state === "online"
+                ? "连接正常"
+                : me.state === "offline"
+                ? "本端网络中断"
+                : "本端已被接替停止"
+              : "多开标签页即可模拟另一台设备"}
+          </span>
         </div>
-      </section>
+      </header>
 
-      <section className="metrics-grid">
-        {project.metrics.map((metric: string, index: number) => (
-          <MetricCard key={metric} label={metric} value={values[index]} index={index} />
-        ))}
-      </section>
-
-      <section className="workspace">
-        <aside className="panel narrow">
-          <h2>角色</h2>
-          <div className="chips">
-            {project.users.map((user: string) => (
-              <span key={user}>{user}</span>
-            ))}
-          </div>
-          <h2>筛选</h2>
-          <div className="chips muted">
-            {project.filters.map((filter: string) => (
-              <button key={filter}>{filter}</button>
-            ))}
-          </div>
-        </aside>
-
-        <section className="panel">
-          <div className="section-heading">
-            <div>
-              <p>{project.domain}</p>
-              <h2>记录字段</h2>
-            </div>
-            <button className="primary-action">新增记录</button>
-          </div>
-          <div className="field-grid">
-            {project.fields.map((field: string) => (
-              <label key={field}>
-                <span>{field}</span>
-                <input placeholder={"填写" + field} />
-              </label>
-            ))}
-          </div>
-        </section>
-      </section>
-
-      <section className="records panel">
-        <div className="section-heading">
-          <div>
-            <p>示例数据</p>
-            <h2>近期记录</h2>
-          </div>
-          <button>导出摘要</button>
+      <div className="console-layout">
+        <SessionList
+          sessions={sessions}
+          selectedId={session.id}
+          onSelect={setSelectedId}
+          tabId={tabId}
+          onReset={() => {
+            resetDemo();
+            setSelectedId(undefined);
+          }}
+        />
+        <div className="console-main">
+          <DeviceDock {...consoleProps} />
+          <ProgressConsole {...consoleProps} />
+          <MinutesPanel {...consoleProps} />
         </div>
-        <div className="record-list">
-          {project.records.map((record: string[], index: number) => (
-            <article key={record.join("-")} className="record-card">
-              <div className="record-index">{String(index + 1).padStart(2, "0")}</div>
-              <div>
-                <h3>{record[0]}</h3>
-                <p>{record.slice(1).join(" · ")}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+      </div>
     </main>
   );
 }
